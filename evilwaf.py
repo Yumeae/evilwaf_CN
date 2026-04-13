@@ -66,14 +66,14 @@ def _check_latest_version() -> Optional[str]:
 def _print_version_check():
     latest = _check_latest_version()
     if latest is None:
-        print(f"[*] Version  : v{VERSION}")
+        print(f"[*] 版本     : v{VERSION}")
         return
     if latest != VERSION:
-        print(f"[*] Version  : v{VERSION}")
-        print(f"[!] New version available: v{latest}")
-        print(f"[!] Update   : https://github.com/{GITHUB_REPO}/releases/latest")
+        print(f"[*] 版本     : v{VERSION}")
+        print(f"[!] 发现新版本: v{latest}")
+        print(f"[!] 更新地址  : https://github.com/{GITHUB_REPO}/releases/latest")
     else:
-        print(f"[*] Version  : v{VERSION}  (up to date)")
+        print(f"[*] 版本     : v{VERSION}  (已是最新)")
 
 
 def _fmt_size(body: bytes) -> str:
@@ -110,8 +110,8 @@ def _hunt_origin_ip_verbose(target: str) -> Optional[str]:
     parsed = urlparse(target)
     domain = parsed.hostname or parsed.netloc
 
-    print(f"\n[*] Origin IP Hunter started for: {domain}")
-    print(f"[*] Launching scanners in parallel:\n")
+    print(f"\n[*] 源站 IP 探测已启动，目标: {domain}")
+    print(f"[*] 并行启动以下扫描器:\n")
 
     scanner_names = [
         "dns_history", "ssl_certificate", "subdomain_enum", "dns_misconfig",
@@ -154,14 +154,14 @@ def _hunt_origin_ip_verbose(target: str) -> Optional[str]:
             self._report.waf_vendor = vendor
             self._report.waf_names  = names
             if names:
-                print(f"  [WAF] Detected: {', '.join(names)}\n")
+                print(f"  [WAF] 已检测到: {', '.join(names)}\n")
 
             async def run_scanner(scanner):
                 scanner_name = type(scanner).__name__
                 try:
                     results        = await scanner.scan()
                     if results:
-                        print(f"  [scanner:{scanner_name}] found {len(results)} candidate(s)")
+                        print(f"  [扫描器:{scanner_name}] 发现 {len(results)} 个候选 IP")
                     newly_verified = await self._correlator.feed(results, self._report)
                     for r in results:
                         with lock:
@@ -172,19 +172,19 @@ def _hunt_origin_ip_verbose(target: str) -> Optional[str]:
                                 seen_ips[r.ip]["sources"] += 1
                         print_ip_found(r, is_new)
                     if newly_verified:
-                        print(f"\n  [cross-source] {len(newly_verified)} IP(s) triggered early verification:")
+                        print(f"\n  [交叉验证] {len(newly_verified)} 个 IP 触发了早期验证:")
                         for r in newly_verified:
                             print_ip_found(r, False)
                         print()
                 except Exception as e:
-                    print(f"  [scanner:{scanner_name}] error: {e}")
+                    print(f"  [扫描器:{scanner_name}] 错误: {e}")
 
             await asyncio.gather(*[run_scanner(s) for s in self._scanners])
             candidates = self._report.origin_candidates
             unverified = [c for c in candidates if not c.verified]
 
             if self._verify and unverified:
-                print(f"\n  [verify] Running final verification on {len(unverified)} unverified IP(s)...")
+                print(f"\n  [验证] 对 {len(unverified)} 个未验证 IP 进行最终验证...")
                 from concurrent.futures import ThreadPoolExecutor
                 with ThreadPoolExecutor(max_workers=20) as ex:
                     verify_results = await asyncio.gather(
@@ -206,7 +206,7 @@ def _hunt_origin_ip_verbose(target: str) -> Optional[str]:
                         print_ip_found(unverified[i], False)
 
             if self._enrich and candidates:
-                print(f"\n  [enrich] Enriching {len(candidates)} candidate(s) with ASN/org/port data...")
+                print(f"\n  [丰富化] 正在为 {len(candidates)} 个候选 IP 补充 ASN/组织/端口数据...")
                 from concurrent.futures import ThreadPoolExecutor
                 with ThreadPoolExecutor(max_workers=10) as ex:
                     await asyncio.gather(
@@ -228,66 +228,66 @@ def _hunt_origin_ip_verbose(target: str) -> Optional[str]:
 
         elapsed = time.time() - start_ts
         print(f"\n{'='*60}")
-        print(f"  Hunt complete in {elapsed:.1f}s")
-        print(f"  Total candidates : {len(report.origin_candidates)}")
-        print(f"  Verified IPs     : {len(report.verified_ips)}")
+        print(f"  探测完成，耗时 {elapsed:.1f}s")
+        print(f"  候选 IP 总数   : {len(report.origin_candidates)}")
+        print(f"  已验证 IP 数   : {len(report.verified_ips)}")
         print()
 
         if report.sorted_candidates:
-            print("  Candidates (ranked by confidence):")
+            print("  候选 IP（按置信度排序）:")
             for r in report.sorted_candidates[:10]:
                 verified_tag = ""
                 if r.verified:
                     parts = []
                     if r.cert_verified: parts.append("cert")
                     if r.http_verified: parts.append("http")
-                    verified_tag = f" [VERIFIED:{'+'.join(parts)}]"
-                org_str     = f" org={r.org}"         if r.org     else ""
-                country_str = f" country={r.country}" if r.country else ""
-                cross_str   = f" sources={r.cross_source_count}"
+                    verified_tag = f" [已验证:{'+'.join(parts)}]"
+                org_str     = f" 组织={r.org}"       if r.org     else ""
+                country_str = f" 国家={r.country}"   if r.country else ""
+                cross_str   = f" 来源数={r.cross_source_count}"
                 print(
                     f"    {r.ip:<18}"
-                    f" conf={r.confidence:.0%}"
+                    f" 置信度={r.confidence:.0%}"
                     f"{verified_tag}{cross_str}{org_str}{country_str}"
                 )
 
         if report.best_candidate:
             best = report.best_candidate
-            print(f"\n  Best candidate   : {best.ip}")
-            print(f"  Confidence       : {best.confidence:.0%}")
-            print(f"  Source           : {best.source}")
-            print(f"  Verified         : {best.verified}")
-            if best.org:     print(f"  Org              : {best.org}")
-            if best.country: print(f"  Country          : {best.country}")
-            if best.ports:   print(f"  Open ports       : {best.ports}")
+            print(f"\n  最佳候选 IP    : {best.ip}")
+            print(f"  置信度         : {best.confidence:.0%}")
+            print(f"  来源           : {best.source}")
+            print(f"  已验证         : {best.verified}")
+            if best.org:     print(f"  组织           : {best.org}")
+            if best.country: print(f"  国家           : {best.country}")
+            if best.ports:   print(f"  开放端口       : {best.ports}")
             print(f"{'='*60}\n")
             return best.ip
 
         print(f"{'='*60}\n")
-        print("[!] No origin IP found")
+        print("[!] 未找到源站 IP")
     except Exception as e:
-        print(f"[!] Hunt failed: {e}")
+        print(f"[!] 探测失败: {e}")
     return None
 
 
 def _print_scan_finding(finding: VulnFinding):
     color = SEVERITY_COLOR.get(finding.severity, "")
-    tag   = "[VERIFIED]" if finding.verified else "[UNVERIFIED]"
-    fp    = " [FALSE-POSITIVE]" if finding.false_positive else ""
-    print(f"\n  {color}[VULN]{RESET} {finding.severity.value.upper()} {tag}{fp}")
-    print(f"  Layer      : {finding.layer or finding.category.value}")
-    print(f"  Category   : {finding.category.value}")
-    print(f"  Title      : {finding.title}")
-    print(f"  Confidence : {finding.confidence:.0%}")
-    print(f"  Evidence   : {len(finding.evidence)} request(s) passed WAF")
+    tag   = "[已验证]" if finding.verified else "[未验证]"
+    fp    = " [误报]" if finding.false_positive else ""
+    print(f"\n  {color}[漏洞]{RESET} {finding.severity.value.upper()} {tag}{fp}")
+    print(f"  层级      : {finding.layer or finding.category.value}")
+    print(f"  类别      : {finding.category.value}")
+    print(f"  标题      : {finding.title}")
+    print(f"  置信度    : {finding.confidence:.0%}")
+    print(f"  证据      : {len(finding.evidence)} 个请求通过 WAF")
     if finding.evidence:
         e = finding.evidence[0]
-        print(f"  Sample     : [{e.status_code}] {e.request.payload[:80]}")
-        print(f"  Encoding   : {e.request.encoding}")
-        print(f"  Resp time  : {e.response_time * 1000:.0f}ms")
+        print(f"  样本      : [{e.status_code}] {e.request.payload[:80]}")
+        print(f"  编码      : {e.request.encoding}")
+        print(f"  响应时间  : {e.response_time * 1000:.0f}ms")
     if finding.cve:
-        print(f"  CVE        : {finding.cve}")
-    print(f"  Fix        : {finding.remediation}")
+        print(f"  CVE       : {finding.cve}")
+    print(f"  修复建议  : {finding.remediation}")
     print()
 
 
@@ -305,13 +305,13 @@ def _print_scan_progress(current: int, total: int, category: str,
     findings   = len([f for f in scanner.get_findings() if not f.false_positive])
     print(
         f"  [{current:>2}/{total}] {category:<30}"
-        f"  req={total_req:<5}"
-        f"  pass={pass_rate:.0%}"
-        f"  block={block_rate:.0%}"
-        f"  conf={conf:.0%}"
-        f"  rt={mean_ms:.0f}ms(p95={p95_ms:.0f}ms)"
-        f"  vulns={findings}"
-        f"  t={elapsed:.0f}s"
+        f"  请求={total_req:<5}"
+        f"  通过={pass_rate:.0%}"
+        f"  阻断={block_rate:.0%}"
+        f"  置信={conf:.0%}"
+        f"  响应={mean_ms:.0f}ms(p95={p95_ms:.0f}ms)"
+        f"  漏洞={findings}"
+        f"  耗时={elapsed:.0f}s"
     )
 
 
@@ -323,25 +323,25 @@ def _print_scan_summary(scanner: WAFVulnScanner, findings: List[VulnFinding],
     by_cat   = stats.get("by_category", {})
 
     print(f"\n{'='*70}")
-    print(f"  WAF Vulnerability Scan — Complete")
+    print(f"  WAF 漏洞扫描 — 完成")
     print(f"{'='*70}")
-    print(f"  WAF Detected     : {waf_info.get('waf', 'unknown')} {waf_info.get('version', '')}")
-    print(f"  Duration         : {elapsed:.1f}s")
-    print(f"  Total requests   : {stats.get('total_requests', 0)}")
-    print(f"  Pass rate        : {stats.get('pass_rate', 0):.1%}")
-    print(f"  Block rate       : {stats.get('block_rate', 0):.1%}")
-    print(f"  Challenge rate   : {stats.get('challenge_rate', 0):.1%}")
-    print(f"  Error rate       : {stats.get('error_rate', 0):.1%}")
+    print(f"  检测到的 WAF   : {waf_info.get('waf', '未知')} {waf_info.get('version', '')}")
+    print(f"  扫描耗时       : {elapsed:.1f}s")
+    print(f"  请求总数       : {stats.get('total_requests', 0)}")
+    print(f"  通过率         : {stats.get('pass_rate', 0):.1%}")
+    print(f"  阻断率         : {stats.get('block_rate', 0):.1%}")
+    print(f"  挑战率         : {stats.get('challenge_rate', 0):.1%}")
+    print(f"  错误率         : {stats.get('error_rate', 0):.1%}")
 
     if rt:
-        print(f"  Response time    : mean={rt.get('mean_ms',0):.0f}ms"
+        print(f"  响应时间       : 均值={rt.get('mean_ms',0):.0f}ms"
               f"  p95={rt.get('p95_ms',0):.0f}ms"
               f"  p99={rt.get('p99_ms',0):.0f}ms"
-              f"  std={rt.get('std_ms',0):.0f}ms")
+              f"  标准差={rt.get('std_ms',0):.0f}ms")
 
     if by_cat:
-        print(f"\n  Per-layer analysis:")
-        print(f"  {'Layer':<30} {'Pass':>6} {'Block':>7} {'Samples':>8}")
+        print(f"\n  各层分析:")
+        print(f"  {'层级':<30} {'通过':>6} {'阻断':>7} {'样本数':>8}")
         print(f"  {'-'*30} {'-'*6} {'-'*7} {'-'*8}")
         for cat, data in sorted(by_cat.items(),
                                  key=lambda x: x[1]["pass_rate"], reverse=True):
@@ -354,9 +354,9 @@ def _print_scan_summary(scanner: WAFVulnScanner, findings: List[VulnFinding],
 
     real = [f for f in findings if not f.false_positive]
     if real:
-        print(f"\n  Findings ({len(real)} verified):")
-        print(f"  {'Sev':<10} {'Conf':>5} {'V':>3}  {'Layer':<25} {'Title'}")
-        print(f"  {'-'*10} {'-'*5} {'-'*3}  {'-'*25} {'-'*30}")
+        print(f"\n  发现 ({len(real)} 项已验证):")
+        print(f"  {'严重性':<10} {'置信度':>6} {'V':>3}  {'层级':<25} {'标题'}")
+        print(f"  {'-'*10} {'-'*6} {'-'*3}  {'-'*25} {'-'*30}")
         for f in sorted(real, key=lambda x: x.confidence, reverse=True):
             color = SEVERITY_COLOR.get(f.severity, "")
             vt    = "V" if f.verified else " "
@@ -368,17 +368,17 @@ def _print_scan_summary(scanner: WAFVulnScanner, findings: List[VulnFinding],
                 f"  {f.title}"
             )
     else:
-        print(f"\n  No verified vulnerabilities found.")
+        print(f"\n  未发现已验证的漏洞。")
 
     print(f"{'='*70}\n")
 
 
 def _run_vuln_scanner_verbose(target: str, rps: float = 3.0,
                                output_dir: Optional[str] = None):
-    print(f"\n[*] WAF Vulnerability Scanner  —  EvilWAF v{VERSION}")
-    print(f"[*] Target : {target}")
-    print(f"[*] Rate   : {rps} req/s")
-    print(f"[*] Output : {output_dir or 'auto'}\n")
+    print(f"\n[*] WAF 漏洞扫描器  —  EvilWAF v{VERSION}")
+    print(f"[*] 目标   : {target}")
+    print(f"[*] 速率   : {rps} 请求/秒")
+    print(f"[*] 输出   : {output_dir or '自动'}\n")
 
     start_ts = time.time()
     scanner  = WAFVulnScanner(
@@ -394,7 +394,7 @@ def _run_vuln_scanner_verbose(target: str, rps: float = 3.0,
     def on_progress(current: int, total: int, category: str):
         _print_scan_progress(current, total, category, scanner, start_ts)
 
-    print(f"  {'Step':>5}  {'Layer':<30}  {'Req':<5}  {'Pass':<5}  {'Block':<6}  {'Conf':<5}  {'RT':<14}  {'Vulns'}")
+    print(f"  {'步骤':>5}  {'层级':<30}  {'请求':<5}  {'通过':<5}  {'阻断':<6}  {'置信':<5}  {'响应时间':<14}  {'漏洞'}")
     print(f"  {'-'*5}  {'-'*30}  {'-'*5}  {'-'*5}  {'-'*6}  {'-'*5}  {'-'*14}  {'-'*5}")
 
     findings = scanner.scan(on_finding=on_finding, on_progress=on_progress)
@@ -402,7 +402,7 @@ def _run_vuln_scanner_verbose(target: str, rps: float = 3.0,
 
 
 def _ask_connect_proxy(ip: str) -> bool:
-    print(f"[?] Use {ip} as origin IP for bypass? [y/n]: ", end="", flush=True)
+    print(f"[?] 是否使用 {ip} 作为源站 IP 进行绕过？[y/n]: ", end="", flush=True)
     try:
         return input().strip().lower() == "y"
     except Exception:
@@ -563,17 +563,17 @@ class TorIPScrollPanel:
         self._last_count = 0
         hdr = urwid.AttrMap(
             urwid.Columns([
-                ('fixed', 5,  urwid.Text(('ws_hdr', ' TN'))),
-                ('fixed', 18, urwid.Text(('ws_hdr', 'IP Address'))),
-                ('fixed', 8,  urwid.Text(('ws_hdr', 'Time'))),
-                ('weight', 1, urwid.Text(('ws_hdr', 'Status'))),
+                ('fixed', 5,  urwid.Text(('ws_hdr', ' 序号'))),
+                ('fixed', 18, urwid.Text(('ws_hdr', 'IP 地址'))),
+                ('fixed', 8,  urwid.Text(('ws_hdr', '时间'))),
+                ('weight', 1, urwid.Text(('ws_hdr', '状态'))),
             ], dividechars=1),
             'ws_hdr',
         )
         self.widget = urwid.AttrMap(
             urwid.LineBox(
                 urwid.Pile([('pack', hdr), ('weight', 1, urwid.ListBox(self._walker))]),
-                title=" TOR IP Rotation ", title_align='left',
+                title=" TOR IP 轮换 ", title_align='left',
             ),
             'ws_bg',
         )
@@ -604,16 +604,16 @@ class SportScrollPanel:
         hdr = urwid.AttrMap(
             urwid.Columns([
                 ('fixed', 5,  urwid.Text(('ws_hdr', ' RQ'))),
-                ('fixed', 8,  urwid.Text(('ws_hdr', 'Port'))),
-                ('fixed', 14, urwid.Text(('ws_hdr', 'Profile'))),
-                ('weight', 1, urwid.Text(('ws_hdr', 'St'))),
+                ('fixed', 8,  urwid.Text(('ws_hdr', '端口'))),
+                ('fixed', 14, urwid.Text(('ws_hdr', '配置'))),
+                ('weight', 1, urwid.Text(('ws_hdr', '状态'))),
             ], dividechars=1),
             'ws_hdr',
         )
         self.widget = urwid.AttrMap(
             urwid.LineBox(
                 urwid.Pile([('pack', hdr), ('weight', 1, urwid.ListBox(self._walker))]),
-                title=" Source Port ", title_align='left',
+                title=" 源端口 ", title_align='left',
             ),
             'ws_bg',
         )
@@ -646,18 +646,18 @@ class EvilProxyScrollPanel:
         hdr = urwid.AttrMap(
             urwid.Columns([
                 ('fixed', 5,  urwid.Text(('ws_hdr', ' RQ'))),
-                ('fixed', 18, urwid.Text(('ws_hdr', 'IP Address'))),
-                ('fixed', 7,  urwid.Text(('ws_hdr', 'Port'))),
-                ('fixed', 7,  urwid.Text(('ws_hdr', 'ms'))),
-                ('fixed', 5,  urwid.Text(('ws_hdr', 'Anon'))),
-                ('weight', 1, urwid.Text(('ws_hdr', 'St'))),
+                ('fixed', 18, urwid.Text(('ws_hdr', 'IP 地址'))),
+                ('fixed', 7,  urwid.Text(('ws_hdr', '端口'))),
+                ('fixed', 7,  urwid.Text(('ws_hdr', '延迟'))),
+                ('fixed', 5,  urwid.Text(('ws_hdr', '匿名'))),
+                ('weight', 1, urwid.Text(('ws_hdr', '状态'))),
             ], dividechars=1),
             'ws_hdr',
         )
         self.widget = urwid.AttrMap(
             urwid.LineBox(
                 urwid.Pile([('pack', hdr), ('weight', 1, urwid.ListBox(self._walker))]),
-                title=" Evil Proxy Pool ", title_align='left',
+                title=" 代理池 ", title_align='left',
             ),
             'ws_bg',
         )
@@ -703,18 +703,18 @@ class VulnScrollPanel:
         hdr = urwid.AttrMap(
             urwid.Columns([
                 ('fixed', 5,  urwid.Text(('ws_hdr', ' RQ'))),
-                ('fixed', 10, urwid.Text(('ws_hdr', 'Severity'))),
-                ('fixed', 6,  urwid.Text(('ws_hdr', 'Conf'))),
-                ('fixed', 4,  urwid.Text(('ws_hdr', 'Ver'))),
-                ('fixed', 20, urwid.Text(('ws_hdr', 'Layer'))),
-                ('weight', 1, urwid.Text(('ws_hdr', 'Title'))),
+                ('fixed', 10, urwid.Text(('ws_hdr', '严重性'))),
+                ('fixed', 6,  urwid.Text(('ws_hdr', '置信度'))),
+                ('fixed', 4,  urwid.Text(('ws_hdr', '验证'))),
+                ('fixed', 20, urwid.Text(('ws_hdr', '层级'))),
+                ('weight', 1, urwid.Text(('ws_hdr', '标题'))),
             ], dividechars=1),
             'ws_hdr',
         )
         self.widget = urwid.AttrMap(
             urwid.LineBox(
                 urwid.Pile([('pack', hdr), ('weight', 1, urwid.ListBox(self._walker))]),
-                title=" WAF Vulnerabilities ", title_align='left',
+                title=" WAF 漏洞 ", title_align='left',
             ),
             'ws_bg',
         )
@@ -751,7 +751,7 @@ class ScannerStatsPanel:
         self.widget       = urwid.AttrMap(
             urwid.LineBox(
                 urwid.Padding(self._text, left=1, right=1),
-                title=" Scanner Stats ", title_align='left',
+                title=" 扫描器统计 ", title_align='left',
             ),
             'ws_bg',
         )
@@ -773,15 +773,15 @@ class ScannerStatsPanel:
             p95    = rt.get("p95_ms", 0.0)
             p99    = rt.get("p99_ms", 0.0)
             self._text.set_text([
-                ('ws_label',      ' Requests  : '), ('ws_value',     f'{total}\n'),
-                ('ws_label',      ' Pass      : '), ('ws_ok',        f'{pr:.1%}\n'),
-                ('ws_label',      ' Block     : '), ('ws_ind_block', f'{br:.1%}\n'),
-                ('ws_label',      ' Challenge : '), ('ws_value',     f'{cr:.1%}\n'),
-                ('ws_label',      ' Confidence: '), ('ws_value',     f'{conf:.1%}\n'),
-                ('ws_label',      ' RT mean   : '), ('ws_value',     f'{mean:.0f}ms\n'),
-                ('ws_label',      ' RT p95    : '), ('ws_value',     f'{p95:.0f}ms\n'),
-                ('ws_label',      ' RT p99    : '), ('ws_value',     f'{p99:.0f}ms\n'),
-                ('ws_label',      ' Vulns     : '), ('ws_ok',        f'{finds}'),
+                ('ws_label',      ' 请求数   : '), ('ws_value',     f'{total}\n'),
+                ('ws_label',      ' 通过      : '), ('ws_ok',        f'{pr:.1%}\n'),
+                ('ws_label',      ' 阻断      : '), ('ws_ind_block', f'{br:.1%}\n'),
+                ('ws_label',      ' 挑战      : '), ('ws_value',     f'{cr:.1%}\n'),
+                ('ws_label',      ' 置信度   : '), ('ws_value',     f'{conf:.1%}\n'),
+                ('ws_label',      ' 平均响应  : '), ('ws_value',     f'{mean:.0f}ms\n'),
+                ('ws_label',      ' P95响应   : '), ('ws_value',     f'{p95:.0f}ms\n'),
+                ('ws_label',      ' P99响应   : '), ('ws_value',     f'{p99:.0f}ms\n'),
+                ('ws_label',      ' 漏洞数    : '), ('ws_ok',        f'{finds}'),
             ])
         except Exception:
             pass
@@ -878,17 +878,17 @@ class EvilWAFTUI:
         traffic_listbox     = urwid.ListBox(self.traffic_walker)
         traffic_hdr = urwid.AttrMap(
             urwid.Columns([
-                ('fixed', 10, urwid.Text(('tr_hdr', ' Time'))),
-                ('fixed', 20, urwid.Text(('tr_hdr', 'Host'))),
-                ('fixed', 6,  urwid.Text(('tr_hdr', 'M'))),
-                ('fixed', 5,  urwid.Text(('tr_hdr', 'St'))),
-                ('fixed', 6,  urwid.Text(('tr_hdr', 'Proto'))),
-                ('fixed', 7,  urwid.Text(('tr_hdr', 'Size'))),
-                ('weight', 1, urwid.Text(('tr_hdr', 'Result'))),
+                ('fixed', 10, urwid.Text(('tr_hdr', ' 时间'))),
+                ('fixed', 20, urwid.Text(('tr_hdr', '主机'))),
+                ('fixed', 6,  urwid.Text(('tr_hdr', '方法'))),
+                ('fixed', 5,  urwid.Text(('tr_hdr', '状态'))),
+                ('fixed', 6,  urwid.Text(('tr_hdr', '协议'))),
+                ('fixed', 7,  urwid.Text(('tr_hdr', '大小'))),
+                ('weight', 1, urwid.Text(('tr_hdr', '结果'))),
             ], dividechars=1),
             'tr_hdr',
         )
-        self.follow_text = urwid.Text(('ws_ok', ' [FOLLOW] '))
+        self.follow_text = urwid.Text(('ws_ok', ' [跟踪] '))
         traffic_panel = urwid.AttrMap(
             urwid.LineBox(
                 urwid.Pile([
@@ -896,7 +896,7 @@ class EvilWAFTUI:
                     ('weight', 1, urwid.AttrMap(traffic_listbox, 'tr_bg')),
                     ('pack',      urwid.AttrMap(urwid.Padding(self.follow_text, left=1), 'tr_bg')),
                 ]),
-                title=" Traffic Monitor ", title_align='left',
+                title=" 流量监控 ", title_align='left',
             ),
             'tr_bg',
         )
@@ -946,7 +946,7 @@ class EvilWAFTUI:
                     ('pack',      tech_hdr),
                     ('weight', 1, urwid.ListBox(self.tech_walker)),
                 ]),
-                title=" Active Techniques ", title_align='left',
+                title=" 当前技术 ", title_align='left',
             ),
             'ws_bg',
         )))
@@ -956,7 +956,7 @@ class EvilWAFTUI:
             panels.append(('pack', urwid.AttrMap(
                 urwid.LineBox(
                     urwid.Padding(self.server_ip_text, left=1, right=1),
-                    title=" Server IP ", title_align='left',
+                    title=" 服务器 IP ", title_align='left',
                 ),
                 'ws_bg',
             )))
@@ -979,16 +979,16 @@ class EvilWAFTUI:
         parsed  = urlparse(self.target_url or "")
         h       = parsed.netloc or "N/A"
         waf_p   = f" | WAF: {self.waf_name}"               if self.waf_name             else ""
-        ip_p    = f" | Origin: {self.server_ip}"            if self.server_ip            else ""
-        tor_p   = " | TOR: ON"                              if self.enable_tor           else ""
-        proxy_p = f" | Proxy: {self.upstream_proxy_count}"  if self.upstream_proxy_count else ""
-        ep_p    = " | EvilProxy: ON"                        if self.use_evil_proxy       else ""
-        scan_p  = " | Scanner: ON"                          if self.enable_scanner       else ""
+        ip_p    = f" | 来源: {self.server_ip}"              if self.server_ip            else ""
+        tor_p   = " | TOR: 开"                              if self.enable_tor           else ""
+        proxy_p = f" | 代理: {self.upstream_proxy_count}"   if self.upstream_proxy_count else ""
+        ep_p    = " | EvilProxy: 开"                        if self.use_evil_proxy       else ""
+        scan_p  = " | 扫描器: 开"                           if self.enable_scanner       else ""
         return urwid.AttrMap(
             urwid.Text(
                 ('header',
                  f" EvilWAF v{VERSION} | {h}{waf_p}{ip_p}{tor_p}{proxy_p}{ep_p}{scan_p}"
-                 f"   q=Quit  f=follow  up/dn=browse "),
+                 f"   q=退出  f=跟踪  上下键=浏览 "),
                 align='center',
             ),
             'header',
@@ -1014,7 +1014,7 @@ class EvilWAFTUI:
             st     = str(code) if code else '---'
             proto  = 'HTTPS' if req.is_https else 'HTTP'
             sz     = _fmt_size(resp.body)
-            res    = 'PASS' if rec.passed else ('BLCK' if rec.blocked else 'UNKN')
+            res    = '通过' if rec.passed else ('阻断' if rec.blocked else '未知')
 
             is_follow = self._auto_follow and idx == self.selected_row
             is_manual = not self._auto_follow and idx == self.selected_row
@@ -1063,17 +1063,17 @@ class EvilWAFTUI:
             except Exception: pass
 
         if self._auto_follow:
-            self.follow_text.set_text(('ws_ok', ' [FOLLOW] f=pause '))
+            self.follow_text.set_text(('ws_ok', ' [跟踪] f=暂停 '))
         else:
             self.follow_text.set_text(('tr_block',
-                f' [PAUSED] row={self.selected_row+1}/{len(records)}  f=resume '))
+                f' [暂停] 行={self.selected_row+1}/{len(records)}  f=继续 '))
 
     def _update_tech_panel(self):
         self.tech_walker.clear()
         entries = self.tech_table.get_recent(6)
         if not entries:
             self.tech_walker.append(
-                urwid.AttrMap(urwid.Text(('ws_inactive', ' Waiting...')), 'ws_bg'))
+                urwid.AttrMap(urwid.Text(('ws_inactive', ' 等待中...')), 'ws_bg'))
             return
         for e in reversed(entries):
             cols = urwid.Columns([
@@ -1088,9 +1088,9 @@ class EvilWAFTUI:
         if not self.server_ip:
             return
         self.server_ip_text.set_text([
-            ('ws_label', ' Origin IP : '), ('ws_ip',    self.server_ip),
+            ('ws_label', ' 来源 IP   : '), ('ws_ip',    self.server_ip),
             ('ws_bg',    '\n'),
-            ('ws_label', ' Mode      : '), ('ws_value', 'Direct Bypass'),
+            ('ws_label', ' 模式      : '), ('ws_value', '直接绕过'),
         ])
 
     def _update_status(self):
@@ -1102,23 +1102,23 @@ class EvilWAFTUI:
         tor_ips    = self.tor_table.get_all()
         tor_cnt    = len(tor_ips)
         cur_ip     = tor_ips[-1]["ip"] if tor_ips else "N/A"
-        tor_str    = f"ON ip={cur_ip} rot={tor_cnt}" if self.enable_tor else "OFF"
-        ip_str     = f" | Origin:{self.server_ip}" if self.server_ip else ""
-        mode_str   = " FOLLOW" if self._auto_follow else " PAUSED"
+        tor_str    = f"开 ip={cur_ip} 轮换={tor_cnt}" if self.enable_tor else "关"
+        ip_str     = f" | 来源:{self.server_ip}" if self.server_ip else ""
+        mode_str   = " 跟踪" if self._auto_follow else " 暂停"
         sport_e    = self.sport_table.get_all()
         sport_last = sport_e[-1]["port"] if sport_e else "N/A"
         proxy_e    = self.proxy_table.get_all()
         proxy_pool = self.server._evil_proxy.pool_size() if self.server._evil_proxy else 0
         proxy_last = proxy_e[-1]["ip"] if proxy_e else "N/A"
-        proxy_str  = f" | EvilProxy pool={proxy_pool} last={proxy_last}" if self.use_evil_proxy else ""
+        proxy_str  = f" | EvilProxy 池={proxy_pool} 最近={proxy_last}" if self.use_evil_proxy else ""
         vuln_e     = self.vuln_table.get_all()
         vuln_cnt   = len([v for v in vuln_e if not v["fp"]])
-        scan_str   = f" | Vulns:{vuln_cnt}" if self.enable_scanner else ""
+        scan_str   = f" | 漏洞:{vuln_cnt}" if self.enable_scanner else ""
         self.status_text.set_text([
-            ('status', f' Total:{total} Pass:{passed} Block:{blocked} Rate:{rate:.1f}%'),
+            ('status', f' 总计:{total} 通过:{passed} 阻断:{blocked} 比率:{rate:.1f}%'),
             ('status', f' TOR:{tor_str}'),
             ('status', ip_str),
-            ('status', f' Sport:{sport_last}'),
+            ('status', f' 源端口:{sport_last}'),
             ('status', proxy_str),
             ('status', scan_str),
             ('status', f' |{mode_str} '),
@@ -1391,35 +1391,35 @@ def signal_handler(signum: int, frame: Any):
 def main():
     parser = argparse.ArgumentParser(
         prog="evilwaf",
-        description=f"EvilWAF v{VERSION} — Transparent WAF Bypass Proxy",
+        description=f"EvilWAF v{VERSION} — 透明 WAF 绕过代理",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
-            "Flags:\n"
-            "  -t / --target           Target URL (required)\n"
-            "  --listen-host           Proxy listen address (default: 127.0.0.1)\n"
-            "  --listen-port           Proxy listen port (default: 8080)\n"
-            "  --enable-tor            Route traffic through TOR\n"
-            "  --tor-control-port      TOR control port (default: 9051)\n"
-            "  --tor-password          TOR control password\n"
-            "  --tor-rotate-every      Rotate TOR IP every N requests\n"
-            "  --server-ip             Force origin IP (WAF bypass)\n"
-            "  --auto-hunt             Auto-discover origin IP behind WAF\n"
-            "  --upstream-proxy URL    Upstream proxy\n"
-            "  --proxy-file FILE       File with proxy URLs\n"
-            "  --no-evil-proxy         Disable EvilProxy pool\n"
-            "  --h2-strategy           H2 fingerprint: weighted_random|round_robin|random\n"
-            "  --scan-vulns            Enable WAF vulnerability scanner (background)\n"
-            "  --scan-target URL       Scanner target (default: same as --target)\n"
-            "  --scan-rps FLOAT        Scanner request rate (default: 3.0)\n"
-            "  --scan-output DIR       Scanner output directory\n"
-            "  --scan-only             Run scanner only, no proxy\n"
-            "  --no-tui                Headless mode\n"
+            "参数说明:\n"
+            "  -t / --target           目标 URL（必填）\n"
+            "  --listen-host           代理监听地址（默认: 127.0.0.1）\n"
+            "  --listen-port           代理监听端口（默认: 8080）\n"
+            "  --enable-tor            通过 TOR 路由流量\n"
+            "  --tor-control-port      TOR 控制端口（默认: 9051）\n"
+            "  --tor-password          TOR 控制密码\n"
+            "  --tor-rotate-every      每 N 次请求轮换 TOR IP\n"
+            "  --server-ip             强制指定源站 IP（WAF 绕过）\n"
+            "  --auto-hunt             自动发现 WAF 后方源站 IP\n"
+            "  --upstream-proxy URL    上游代理\n"
+            "  --proxy-file FILE       代理 URL 列表文件\n"
+            "  --no-evil-proxy         禁用 EvilProxy 代理池\n"
+            "  --h2-strategy           H2 指纹策略: weighted_random|round_robin|random\n"
+            "  --scan-vulns            启用 WAF 漏洞扫描器（后台运行）\n"
+            "  --scan-target URL       扫描器目标（默认: 与 --target 相同）\n"
+            "  --scan-rps FLOAT        扫描器请求速率（默认: 3.0）\n"
+            "  --scan-output DIR       扫描器输出目录\n"
+            "  --scan-only             仅运行扫描器，不启动代理\n"
+            "  --no-tui                无头模式\n"
             "\n"
             
-            "Always new versions available (https://github.com/matrixleons/evilwaf)\n"
+            "始终有新版本可用 (https://github.com/matrixleons/evilwaf)\n"
             
             "\n"
-            "Examples:\n"
+            "示例:\n"
             "  evilwaf -t https://target.com --scan-only\n"
             "  sqlmap -u 'https://target.com/?id=1' --proxy=http://127.0.0.1:8080\n"
         ),
@@ -1452,11 +1452,11 @@ def main():
 
     parsed = urlparse(args.target)
     if not parsed.scheme or not parsed.netloc:
-        print(f"[!] Invalid target: {args.target}")
+        print(f"[!] 无效目标: {args.target}")
         sys.exit(1)
 
     if args.server_ip and args.auto_hunt:
-        print("[!] --server-ip and --auto-hunt cannot be used together")
+        print("[!] --server-ip 与 --auto-hunt 不能同时使用")
         sys.exit(1)
 
     _print_version_check()
@@ -1478,40 +1478,40 @@ def main():
                             if ln.strip() and not ln.startswith('#')]
         upstream_proxies = (upstream_proxies or []) + file_proxies
 
-    print(f"[*] Target : {args.target}")
-    print("[*] Detecting WAF...", end="", flush=True)
+    print(f"[*] 目标   : {args.target}")
+    print("[*] 正在检测 WAF...", end="", flush=True)
     waf_name = _detect_waf(args.target)
-    print(f"\r[*] WAF    : {waf_name or 'none detected'}")
+    print(f"\r[*] WAF    : {waf_name or '未检测到'}")
 
     server_ip: Optional[str] = None
     if args.server_ip:
         server_ip = args.server_ip
-        print(f"[*] Mode   : Manual IP bypass -> {server_ip}")
+        print(f"[*] 模式   : 手动 IP 绕过 -> {server_ip}")
     elif args.auto_hunt:
         found = _hunt_origin_ip_verbose(args.target)
         if found:
             if _ask_connect_proxy(found):
                 server_ip = found
-                print(f"[+] Routing traffic -> {server_ip}")
+                print(f"[+] 流量路由至 -> {server_ip}")
             else:
-                print(f"[*] Tip: use --server-ip {found}")
+                print(f"[*] 提示: 可使用 --server-ip {found}")
                 sys.exit(0)
         else:
-            print("[!] Origin IP not found — standard proxy mode")
+            print("[!] 未找到源站 IP — 使用标准代理模式")
     else:
-        print("[*] Mode   : Standard proxy")
+        print("[*] 模式   : 标准代理")
 
     if args.enable_tor:
-        print("[*] TOR       : Enabled")
+        print("[*] TOR       : 已启用")
     if not args.no_evil_proxy:
-        print("[*] EvilProxy : Enabled — 1 IP per request")
+        print("[*] EvilProxy : 已启用 — 每请求轮换一个 IP")
     if args.scan_vulns:
         scan_tgt = args.scan_target or args.target
-        print(f"[*] Scanner   : Enabled — target={scan_tgt} rps={args.scan_rps}")
+        print(f"[*] 扫描器    : 已启用 — 目标={scan_tgt} 速率={args.scan_rps}")
     if upstream_proxies:
-        print(f"[*] Proxy     : {len(upstream_proxies)} upstream proxy(ies)")
-    print(f"[*] H2        : strategy={args.h2_strategy}")
-    print(f"[*] Listen    : {args.listen_host}:{args.listen_port}")
+        print(f"[*] 代理      : {len(upstream_proxies)} 个上游代理")
+    print(f"[*] H2        : 策略={args.h2_strategy}")
+    print(f"[*] 监听地址  : {args.listen_host}:{args.listen_port}")
 
     orchestrator = EvilWAFOrchestrator(
         listen_host=args.listen_host,
@@ -1535,22 +1535,22 @@ def main():
     time.sleep(0.8)
 
     if not args.no_evil_proxy and orchestrator.server._evil_proxy:
-        print("[*] EvilProxy : Warming up...", end="", flush=True)
+        print("[*] EvilProxy : 预热中...", end="", flush=True)
         orchestrator.server._evil_proxy.wait_until_ready(min_proxies=5, timeout=30.0)
-        print(f"\r[+] EvilProxy : {orchestrator.server._evil_proxy.pool_size()} proxies ready")
+        print(f"\r[+] EvilProxy : {orchestrator.server._evil_proxy.pool_size()} 个代理就绪")
 
-    print(f"[+] Proxy ready : http://{args.listen_host}:{args.listen_port}")
+    print(f"[+] 代理就绪 : http://{args.listen_host}:{args.listen_port}")
     if server_ip:
-        print(f"[+] Routing     : {parsed.hostname} -> {server_ip}")
+        print(f"[+] 流量路由  : {parsed.hostname} -> {server_ip}")
     if args.enable_tor:
         alive = orchestrator.server._tor.is_tor_alive()
         cur   = orchestrator.server._tor.get_current_ip() if alive else None
-        print(f"[+] TOR status  : {'active — ' + (cur or 'N/A') if alive else 'not reachable'}")
+        print(f"[+] TOR 状态  : {'活跃 — IP=' + (cur or 'N/A') if alive else '无法连接'}")
 
     try:
         if args.no_tui:
-            print("[*] Headless mode — Ctrl+C to stop\n")
-            print(f"{'RQ':<6} {'Host':<20} {'Time':<10} {'St':<5} {'Proto':<6} {'Result':<6} {'Tech'}")
+            print("[*] 无头模式 — 按 Ctrl+C 停止\n")
+            print(f"{'请求':<6} {'主机':<20} {'时间':<10} {'状态':<5} {'协议':<6} {'结果':<6} {'技术'}")
             print("-" * 80)
             last = 0
             rq   = 0
@@ -1573,9 +1573,9 @@ def main():
                     vulns = orchestrator.vuln_table.get_recent(3)
                     for v in vulns:
                         if not v["fp"]:
-                            print(f"  [VULN] {v['severity'].upper():<8}"
-                                  f" layer={v['layer']:<25}"
-                                  f" conf={v['confidence']:.0%}"
+                            print(f"  [漏洞] {v['severity'].upper():<8}"
+                                  f" 层={v['layer']:<25}"
+                                  f" 置信={v['confidence']:.0%}"
                                   f" {v['title']}")
         else:
             tui = EvilWAFTUI(

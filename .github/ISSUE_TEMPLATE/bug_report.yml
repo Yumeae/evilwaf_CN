@@ -1,19 +1,19 @@
-name: Bug report
-description: Report a reproducible problem
+name: Bug 报告
+description: 报告可复现的问题
 labels: [bug]
 body:
   - type: textarea
     id: summary
     attributes:
-      label: Summary
-      description: What is broken?
+      label: 问题摘要
+      description: 哪里出了问题？
     validations:
       required: true
   - type: textarea
     id: steps
     attributes:
-      label: Reproduction steps
-      description: Exact commands/inputs to reproduce.
+      label: 复现步骤
+      description: 复现问题的精确命令/输入。
       placeholder: |
         1. ...
         2. ...
@@ -22,17 +22,17 @@ body:
   - type: textarea
     id: expected
     attributes:
-      label: Expected behavior
+      label: 预期行为
     validations:
       required: true
   - type: textarea
     id: actual
     attributes:
-      label: Actual behavior
+      label: 实际行为
     validations:
       required: true
   - type: input
     id: version
     attributes:
-      label: Version/commit
-      placeholder: e.g. main@<sha>
+      label: 版本/提交
+      placeholder: 例如 main@<sha>
