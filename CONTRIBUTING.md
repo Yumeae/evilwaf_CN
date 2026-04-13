@@ -1,16 +1,16 @@
-# Contributing
+# 贡献指南
 
-Thanks for improving EvilWAF.
+感谢您改进 EvilWAF。
 
-## Before You Open a PR
+## 提交 PR 前
 
-- Keep changes focused and small (one concern per PR).
-- Describe risk/impact, especially for networking, TLS, proxy, and scanner logic.
-- Prefer additive changes over broad refactors.
+- 保持更改聚焦且小（每个 PR 只处理一个关注点）。
+- 描述风险/影响，特别是涉及网络、TLS、代理和扫描器逻辑的部分。
+- 优先选择增量式更改，而非大范围重构。
 
-## Local Validation
+## 本地验证
 
-Run the following before pushing:
+推送前请运行以下命令：
 
 ```bash
 python -m pip install -r requirements.txt
@@ -18,22 +18,22 @@ python -m py_compile evilwaf.py core/*.py chemistry/*.py
 python evilwaf.py -h
 ```
 
-If you changed runtime behavior, include a short reproducible test or command output in the PR description.
+如果您修改了运行时行为，请在 PR 描述中包含简短的可复现测试或命令输出。
 
-## Commit Guidelines
+## 提交信息规范
 
-- Use concise, imperative commit messages.
-- Include scope when useful, for example: `core: ...`, `chemistry: ...`, `docs: ...`, `ci: ...`.
-- Avoid mixing unrelated cleanup with behavioral changes.
+- 使用简洁的祈使语气提交信息。
+- 有助于理解时包含作用域，例如：`core: ...`、`chemistry: ...`、`docs: ...`、`ci: ...`。
+- 避免将无关的清理工作与行为变更混合。
 
-## Pull Request Checklist
+## Pull Request 检查清单
 
-- What changed and why.
-- Any user-facing behavior changes.
-- Security impact and mitigation notes (if applicable).
-- Manual validation steps.
-- Linked issue(s), if available.
+- 变更了什么以及为什么。
+- 任何面向用户的行为变更。
+- 安全影响及缓解措施（如适用）。
+- 手动验证步骤。
+- 关联的 issue（如有）。
 
-## Security Reports
+## 安全报告
 
-Please do not disclose vulnerabilities in public issues. Use the repository Security tab and private advisory flow.
+请勿在公开 issue 中披露漏洞。请使用仓库 Security 标签页和私有公告流程。

@@ -1,51 +1,51 @@
-# EVILWAF - Changelog
+# EVILWAF - 更新日志
 
-All notable changes to the EVILWAF project will be documented in this file.
+本文件记录 EVILWAF 项目的所有重要变更。
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+格式基于 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)，
+本项目遵循 [语义化版本](https://semver.org/spec/v2.0.0.html)。
 
 ---
 
 ## [2.5.0] - 2026-03-19
 
-### Added
+### 新增
 
-- **WAF Vulnerability Scanner** (`waf_vuln_scanner.py`) — Deep, persistent, multi-layer WAF vulnerability scanner built from scratch. Unlike web application scanners, this module treats the firewall itself as the target and analyses all its defensive layers simultaneously.
-  - **10-Layer Architecture** — Each class handles one WAF layer independently:
-    - `Layer1:Network` — Virtual host bypass, sensitive path probing, Host header manipulation
-    - `Layer2:RuleEngine` — Payload-based rule-gap detection across SQLi, XSS, RCE, LFI categories
-    - `Layer3:RateLimit` — Burst and sustained rate-limit enforcement testing
-    - `Layer4:Evasion` — Encoding and normalisation bypass (10 encoding variants per payload)
-    - `Layer5:Behavioural` — Timing analysis: tarpit, JS challenge delay, back-off detection
-    - `Layer6:Header` — HTTP header injection and IP spoofing bypass
-    - `Layer7:TLS` — TLS version probing, SNI bypass, certificate fingerprinting
-    - `Layer8:MethodVerb` — HTTP method/verb bypass including WebDAV methods
-    - `Layer9:Session` — Cookie manipulation, auth bypass, session fixation probes
-    - `Layer10:Misconfig` — WAF misconfiguration and information leak probes
-  - **Persistent Session** (`ScanSession`) — Every scan merges with historical JSON data from previous scans. Confidence tracker warm-starts from prior pass rates instead of zero, meaning each subsequent scan produces more accurate results.
-  - **Statistical Confidence Engine** (`ConfidenceTracker`) — Per-layer confidence scores computed using mean, standard deviation, and stability analysis via numpy. Confidence grows over time as more data is collected — a scan running for minutes is inherently more accurate than one running for seconds.
-  - **False Positive Verification** (`VulnVerifier`) — Every finding is replayed against a clean baseline before being reported. Findings that do not reproduce are automatically marked as false positives and excluded.
-  - **Finding Analyser** (`FindingAnalyser`) — Severity assessment based on pass rate, confidence, and category risk. Minimum confidence threshold of 30% prevents noise.
-  - **Report Generator** (`ReportGenerator`) — Per-finding JSON files saved in real time. Full scan report saved on completion with statistics, per-layer analysis, and all verified findings.
-  - **WAF detection** now imported from `core.waf_detector` — no hardcoded signatures in scanner.
-  - **Payload files** moved to `test/` directory — 8 external files loaded at runtime:
-    - `sqli.txt` — SQL injection payloads including time-based and union-based
-    - `xss.txt` — XSS payloads including template injection and encoding variants
-    - `rce.txt` — Remote code execution payloads for Linux and Windows
-    - `lfi.txt` — Local file inclusion and path traversal payloads
-    - `header_injection.txt` — HTTP header injection and IP spoofing headers
-    - `bypass_techniques.txt` — Path and URL bypass techniques
-    - `session_bypass.txt` — Cookie and auth token manipulation payloads
-    - `misconfig_probes.txt` — Sensitive path and misconfiguration probes
+- **WAF 漏洞扫描器** (`waf_vuln_scanner.py`) — 从零构建的深度持久化多层 WAF 漏洞扫描器。与 Web 应用扫描器不同，该模块将防火墙本身作为目标，同步分析其所有防御层。
+  - **10 层架构** — 每个类独立处理一个 WAF 层：
+    - `第1层:网络` — 虚拟主机绕过、敏感路径探测、Host 头操控
+    - `第2层:规则引擎` — 跨 SQLi、XSS、RCE、LFI 类别的载荷规则缺口检测
+    - `第3层:限速` — 突发与持续限速策略测试
+    - `第4层:逃逸` — 编码与规范化绕过（每个载荷 10 种编码变体）
+    - `第5层:行为` — 时序分析：限速陷阱、JS 挑战延迟、退避检测
+    - `第6层:请求头` — HTTP 头注入与 IP 欺骗绕过
+    - `第7层:TLS` — TLS 版本探测、SNI 绕过、证书指纹识别
+    - `第8层:HTTP方法` — HTTP 方法/动词绕过，包含 WebDAV 方法
+    - `第9层:会话` — Cookie 操控、认证绕过、会话固定探测
+    - `第10层:错误配置` — WAF 错误配置与信息泄露探测
+  - **持久化会话** (`ScanSession`) — 每次扫描与历史 JSON 数据合并。置信度跟踪器从先前的通过率热启动，而非从零开始，意味着后续每次扫描产生更准确的结果。
+  - **统计置信度引擎** (`ConfidenceTracker`) — 使用 numpy 通过均值、标准差和稳定性分析计算每层置信度分数。随着更多数据的收集，置信度持续增长——运行数分钟的扫描本质上比运行数秒的更准确。
+  - **误报验证** (`VulnVerifier`) — 每项发现在上报前均与干净基线重放比对。无法复现的发现自动标记为误报并排除。
+  - **发现分析器** (`FindingAnalyser`) — 基于通过率、置信度和类别风险的严重性评估。30% 的最低置信度阈值防止噪音。
+  - **报告生成器** (`ReportGenerator`) — 实时保存每项发现的 JSON 文件。扫描完成时保存包含统计数据、每层分析和所有已验证发现的完整扫描报告。
+  - **WAF 检测**现从 `core.waf_detector` 导入——扫描器中无硬编码签名。
+  - **载荷文件**移至 `test/` 目录——运行时加载 8 个外部文件：
+    - `sqli.txt` — SQL 注入载荷，包含基于时间和联合查询
+    - `xss.txt` — XSS 载荷，包含模板注入和编码变体
+    - `rce.txt` — Linux 和 Windows 远程代码执行载荷
+    - `lfi.txt` — 本地文件包含与路径穿越载荷
+    - `header_injection.txt` — HTTP 头注入与 IP 欺骗请求头
+    - `bypass_techniques.txt` — 路径和 URL 绕过技术
+    - `session_bypass.txt` — Cookie 和认证令牌操控载荷
+    - `misconfig_probes.txt` — 敏感路径与错误配置探测
 
 
 
-- **Source Port Manipulator** — Per-request source port rotation. Each proxied request originates from a different source port, breaking WAF session tracking and rate-limit counters that rely on source port consistency.
+- **源端口操控器** — 逐请求源端口轮换。每个被代理的请求来自不同源端口，破坏依赖源端口一致性的 WAF 会话追踪与限速计数器。
 
-- **HTTP/2 Fingerprint Rotation** — Per-request H2 SETTINGS frame and HEADERS frame fingerprint rotation. Cycles through browser-realistic H2 profiles (Chrome, Firefox, Safari, Edge) to prevent WAF behavioural fingerprinting of the proxy client.
+- **HTTP/2 指纹轮换** — 逐请求 H2 SETTINGS 帧与 HEADERS 帧指纹轮换。循环使用浏览器真实感 H2 配置文件（Chrome、Firefox、Safari、Edge），防止 WAF 对代理客户端的行为指纹识别。
 
-- **Cloudflare Header Injection** — Injects Cloudflare-specific internal headers (`CF-Connecting-IP`, `CF-IPCountry`, `CF-Ray`, `True-Client-IP`) with crafted values to test WAF trust of upstream headers and attempt IP allowlist bypass.
+- **Cloudflare 头注入** — 注入 Cloudflare 专属内部请求头（`CF-Connecting-IP`、`CF-IPCountry`、`CF-Ray`、`True-Client-IP`），通过精心构造的值测试 WAF 对上游头的信任并尝试 IP 白名单绕过。
 
 ---
 
@@ -53,178 +53,178 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.4.2] - 2026-03-10
 
-### Improvements
-- Bounded concurrency control for origin IP scanner (faster, stable)
+### 改进
+- 源站 IP 扫描器有界并发控制（更快、更稳定）
 
 ### CI/CD
-- Automated Docker image builds
-- Lightweight syntax and smoke CI checks
+- 自动化 Docker 镜像构建
+- 轻量级语法检查与冒烟测试
 
-### Documentation
-- Added CONTRIBUTING.md guidelines
-- Added bug report template
+### 文档
+- 新增 CONTRIBUTING.md 贡献指南
+- 新增 Bug 报告模板
 
-### Maintenance
-- Added .gitignore for Python artifacts
-- Added .editorconfig for consistency
+### 维护
+- 新增 Python 构件的 .gitignore
+- 新增 .editorconfig 保持代码一致性
 
 ---
 
 ## [2.4.1] - 2026-03-07
 
-### Added
-- **Proxy pool IP rotation** — Use external proxy IPs for IP rotation
+### 新增
+- **代理池 IP 轮换** — 通过外部代理 IP 进行 IP 轮换
 
 ---
 
 ## [2.4.0] - 2026-03-05
 
-### Added
-- **Transparent MITM Proxy Architecture** — EvilWAF now sits between any tool and target as a fully transparent proxy. No tool-side configuration needed beyond `--proxy`.
-- **TCP Fingerprint Rotation** — Per-request TCP stack option manipulation to avoid behavioral detection by WAF engines.
-- **TLS Fingerprint Rotation** — Per-request TLS fingerprint rotation (JA3/JA4 style) paired with TCP profiles for consistent transport-layer identity.
-- **Tor IP Rotation** — Full Tor integration via stem. Rotates exit node IP automatically every request or every N requests via `--tor-rotate-every`.
-- **Origin IP Hunter** — Automated real server IP discovery behind WAF using 10 parallel scanners: DNS history, SSL certificate inspection, subdomain enumeration, DNS misconfiguration detection, cloud provider leak detection, GitHub leak search, HTTP header leak analysis, favicon hash matching, ASN range scanning, Censys integration.
-- **Direct Origin Bypass Mode** — Once real IP is discovered, all traffic is routed directly to the origin server, skipping the WAF layer entirely.
-- **Auto WAF Detection** — Automatically detects and identifies WAF vendor before bypass starts.
-- **MITM HTTPS Interception** — Dynamic per-host certificate generation via local CA. Full HTTPS traffic inspection without touching payload.
-- **HTTP/2 and HTTP/1.1 Support** — Automatic ALPN negotiation. Handles both H2 and H1 sessions transparently.
-- **Response Advisor** — Intelligent retry engine. Automatically retries blocked requests (403, 429, 503) with rotated techniques without user intervention.
-- **TUI Dashboard** — Real-time terminal UI built with urwid showing live traffic, active techniques, Tor IP rotation log, and bypass results.
-- **Headless Mode** — `--no-tui` flag for scripted and CI/CD usage with stdout traffic table.
-- **`--auto-hunt` flag** — Single flag to trigger full origin IP discovery workflow with interactive confirmation.
-- **`--server-ip` flag** — Manual origin IP override for direct bypass when IP is already known.
-- **CA Certificate Export** — Auto-exports CA in PEM, CER, and P12 formats for browser and system trust installation.
-- **Docker support** — Full Dockerfile and entrypoint script with Tor service management included.
-- **Optional API key support** — Shodan, SecurityTrails, VirusTotal, Censys via environment variables.
+### 新增
+- **透明 MITM 代理架构** — EvilWAF 现在作为完全透明代理位于任意工具与目标之间，工具侧除 `--proxy` 外无需额外配置。
+- **TCP 指纹轮换** — 逐请求 TCP 协议栈选项操控，规避 WAF 引擎的行为检测。
+- **TLS 指纹轮换** — 逐请求 TLS 指纹轮换（JA3/JA4 风格），与 TCP 配置文件配对保持传输层身份一致性。
+- **Tor IP 轮换** — 通过 stem 实现完整 Tor 集成。每次请求或每 N 次请求（通过 `--tor-rotate-every`）自动轮换出口节点 IP。
+- **源站 IP 探测** — 使用 10 个并行扫描器自动发现 WAF 后方真实服务器 IP：DNS 历史、SSL 证书检查、子域名枚举、DNS 错误配置检测、云提供商泄露检测、GitHub 泄露搜索、HTTP 头泄露分析、favicon 哈希匹配、ASN 范围扫描、Censys 集成。
+- **直接源站绕过模式** — 发现真实 IP 后，所有流量直接路由至源站服务器，完全跳过 WAF 层。
+- **自动 WAF 检测** — 在绕过开始前自动检测并识别 WAF 厂商。
+- **MITM HTTPS 拦截** — 通过本地 CA 动态逐主机生成证书，完整 HTTPS 流量检查且不修改载荷。
+- **HTTP/2 与 HTTP/1.1 支持** — 自动 ALPN 协商，透明处理 H2 和 H1 会话。
+- **响应顾问** — 智能重试引擎，遇到被拦截请求（403、429、503）时自动以轮换技术重试，无需用户干预。
+- **TUI 仪表盘** — 基于 urwid 的实时终端 UI，展示实时流量、当前技术、Tor IP 轮换日志及绕过结果。
+- **无头模式** — `--no-tui` 标志用于脚本和 CI/CD 使用，输出流量表格至 stdout。
+- **`--auto-hunt` 标志** — 单个标志触发完整源站 IP 发现工作流，含交互式确认。
+- **`--server-ip` 标志** — 已知 IP 时手动指定源站 IP 直接绕过。
+- **CA 证书导出** — 自动以 PEM、CER 和 P12 格式导出 CA，供浏览器和系统信任安装。
+- **Docker 支持** — 完整 Dockerfile 和入口脚本，含 Tor 服务管理。
+- **可选 API 密钥支持** — 通过环境变量支持 Shodan、SecurityTrails、VirusTotal、Censys。
 
-### Removed
-- **HTTP/3 bypass technique** — Removed as primary bypass method. QUIC/HTTP3 now used only as ALPN protocol negotiation where server supports it, not as evasion technique.
-- **HTTP/2 downgrade bypass technique** — Removed as standalone bypass. H2 handled transparently via ALPN, not as evasion layer.
-- **IP rotation via proxy pool** — Replaced entirely by Tor-based rotation with stem control for cleaner, more reliable IP switching.
-- **Payload manipulation techniques** — All payload-level bypass logic removed. EvilWAF no longer touches request body, cookies, headers, or query parameters from the proxied tool.
-- **WAF-specific tamper logic** — Removed per-WAF tamper scripts. Bypass now operates purely at transport layer.
-- **Static bypass technique list** — Removed fixed technique sequences. All techniques now rotate dynamically per request.
+### 移除
+- **HTTP/3 绕过技术** — 作为主要绕过方法已移除。QUIC/HTTP3 现仅在服务器支持时用于 ALPN 协议协商，而非逃逸技术。
+- **HTTP/2 降级绕过技术** — 作为独立绕过方法已移除。H2 通过 ALPN 透明处理，而非逃逸层。
+- **通过代理池进行 IP 轮换** — 完全由基于 stem 的 Tor 轮换替代，实现更简洁、更可靠的 IP 切换。
+- **载荷操控技术** — 所有载荷级绕过逻辑已移除。EvilWAF 不再修改被代理工具的请求 body、cookies、headers 或查询参数。
+- **WAF 专属篡改逻辑** — 已移除每个 WAF 的篡改脚本。绕过现在纯粹在传输层运作。
+- **静态绕过技术列表** — 已移除固定技术序列。所有技术现在逐请求动态轮换。
 
-### Changed
-- **Core architecture rewritten** — From standalone bypass scanner to transparent MITM proxy messenger.
-- **Bypass philosophy** — Shifted from "modify what the tool sends" to "change how traffic travels". Payload integrity is now guaranteed.
-- **WAF detection** — Moved from scan-time detection to pre-proxy detection. WAF is identified once at startup before any tool traffic flows.
-- **Tool integration** — Any tool supporting `--proxy` now works with EvilWAF out of the box. No per-tool configuration required.
+### 变更
+- **核心架构重写** — 从独立绕过扫描器到透明 MITM 代理中间件。
+- **绕过理念** — 从"修改工具发送的内容"转变为"改变流量传输方式"。现在保证载荷完整性。
+- **WAF 检测** — 从扫描时检测移至预代理检测。WAF 在任何工具流量流经之前于启动时识别一次。
+- **工具集成** — 任何支持 `--proxy` 的工具现可开箱即用与 EvilWAF 配合，无需逐工具配置。
 
-### Fixed
-- Memory leaks during long proxy sessions with many concurrent connections
-- Unicode handling in host headers during MITM handshake
-- Certificate cache overflow causing stale cert errors on high-volume scans
-- H2 stream ID collision during concurrent request handling
-- Tor rotation race condition under high request frequency
+### 修复
+- 长时间代理会话中多并发连接的内存泄漏
+- MITM 握手期间主机头中的 Unicode 处理
+- 高并发扫描中证书缓存溢出导致的过期证书错误
+- 并发请求处理中的 H2 流 ID 冲突
+- 高请求频率下的 Tor 轮换竞争条件
 
 ---
 
 ## [2.3.0] - 2025-12-10
 
-### Added
-- Early transparent proxy prototype — initial MITM architecture experiment
-- Basic TCP option manipulation module
-- Proof of concept Tor rotation via stem
+### 新增
+- 透明代理早期原型——初步 MITM 架构实验
+- 基础 TCP 选项操控模块
+- 通过 stem 实现 Tor 轮换的概念验证
 
-### Changed
-- Began migration away from payload-based bypass toward transport-layer approach
-- Refactored WAF detector into standalone module
+### 变更
+- 开始从基于载荷的绕过向传输层方法迁移
+- 将 WAF 检测器重构为独立模块
 
-### Fixed
-- Proxy tunnel stability issues under sustained load
-- SSL handshake failures on TLS 1.3 targets
+### 修复
+- 持续负载下代理隧道稳定性问题
+- TLS 1.3 目标上的 SSL 握手失败
 
 ---
 
 ## [2.2.0] - 2025-09-20
 
-### Added
-- Advanced firewall bypass techniques
-- DNS history bypass techniques
-- Cloudflare WAF detection improvements
-- DataDome firewall bypass methods
-- ModSecurity rule evasion techniques
-- Sucuri WAF detection patterns
-- Incapsula/Imperva bypass methods
-- Fastly CDN detection
-- Google Cloud Armor patterns
-- StackPath WAF detection
-- Docker support with Dockerfile
-- Comprehensive .gitignore file
-- EditorConfig for code consistency
+### 新增
+- 高级防火墙绕过技术
+- DNS 历史绕过技术
+- Cloudflare WAF 检测改进
+- DataDome 防火墙绕过方法
+- ModSecurity 规则逃逸技术
+- Sucuri WAF 检测模式
+- Incapsula/Imperva 绕过方法
+- Fastly CDN 检测
+- Google Cloud Armor 模式
+- StackPath WAF 检测
+- Docker 支持与 Dockerfile
+- 完整的 .gitignore 文件
+- EditorConfig 保持代码一致性
 
-### Improved
-- Banner design with multiple style options
-- WAF detection accuracy
-- Performance optimization
-- Error handling and logging
-- Code documentation
-- User interface and experience
+### 改进
+- 多风格选项的横幅设计
+- WAF 检测精度
+- 性能优化
+- 错误处理与日志
+- 代码文档
+- 用户界面与体验
 
-### Fixed
-- DNS history outdated data issues
-- False positive WAF detections
-- Memory leaks in large-scale scans
-- Unicode handling in payloads
-- Cross-platform compatibility issues
+### 修复
+- DNS 历史过期数据问题
+- WAF 误报检测
+- 大规模扫描中的内存泄漏
+- 载荷中的 Unicode 处理
+- 跨平台兼容性问题
 
 ---
 
 ## [2.1.0] - 2024-08-15
 
-### Added
-- Basic WAF detection capabilities
-- Simple firewall bypass methods
-- Initial project structure
+### 新增
+- 基础 WAF 检测能力
+- 简单防火墙绕过方法
+- 初始项目结构
 
-### Improved
-- Codebase organization
-- Basic error handling
+### 改进
+- 代码库组织
+- 基础错误处理
 
 ---
 
 ## [2.0.0] - 2024-07-01
 
-### Added
-- Initial project release
-- Basic functionality
-- Core architecture
+### 新增
+- 初始项目发布
+- 基础功能
+- 核心架构
 
 ---
 
-## Unreleased
+## 未发布
 
-### Planned Features
-- [ ] AI-powered WAF behavior analysis
-- [ ] Machine learning TLS/TCP profile generation
-- [ ] Real-time threat intelligence integration
-- [ ] Advanced behavioral timing analysis
-- [ ] Plugin system for custom scanner modules
-- [ ] GUI interface option
-- [ ] Cloud deployment support
-- [ ] Windows platform support
-
----
-
-## Versioning Scheme
-
-- **Major version** (X.0.0): Breaking changes, major rewrites
-- **Minor version** (0.X.0): New features, backward compatible
-- **Patch version** (0.0.X): Bug fixes, minor improvements
-
-## Release Types
-
-- **Stable**: Production-ready releases
-- **Beta**: Feature-complete, testing phase
-- **Alpha**: Early access, unstable features
+### 计划功能
+- [ ] AI 驱动的 WAF 行为分析
+- [ ] 机器学习 TLS/TCP 配置文件生成
+- [ ] 实时威胁情报集成
+- [ ] 高级行为时序分析
+- [ ] 自定义扫描器模块的插件系统
+- [ ] GUI 界面选项
+- [ ] 云部署支持
+- [ ] Windows 平台支持
 
 ---
 
-## Compatibility
+## 版本命名规则
 
-| EvilWAF Version | Python Version | OS Support |
+- **主版本** (X.0.0)：破坏性变更、重大重写
+- **次版本** (0.X.0)：新功能，向后兼容
+- **补丁版本** (0.0.X)：Bug 修复、细微改进
+
+## 发布类型
+
+- **稳定版**：生产就绪发布
+- **Beta 版**：功能完整，测试阶段
+- **Alpha 版**：早期访问，不稳定功能
+
+---
+
+## 兼容性
+
+| EvilWAF 版本 | Python 版本 | 操作系统支持 |
 |---|---|---|
 | 2.5.x | 3.8+ | Linux, macOS |
 | 2.4.x | 3.8+ | Linux, macOS |
@@ -235,21 +235,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## Contributing
+## 贡献指南
 
-To contribute to this changelog:
-1. Add changes under the appropriate version section
-2. Use the format: `- **Component**: Description of change`
-3. Categorize changes as Added, Changed, Removed, Fixed, or Security
-4. Include issue numbers where applicable: `(#123)`
-
----
-
-## Links
-
-- [GitHub Repository](https://github.com/matrixleons/evilwaf)
-- [Issue Tracker](https://github.com/matrixleons/evilwaf/issues)
+向本更新日志贡献内容：
+1. 在适当的版本章节下添加变更
+2. 使用格式：`- **组件**: 变更描述`
+3. 将变更分类为新增、变更、移除、修复或安全
+4. 如适用，包含 issue 编号：`(#123)`
 
 ---
 
-*This changelog is maintained according to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).*
+## 链接
+
+- [GitHub 仓库](https://github.com/matrixleons/evilwaf)
+- [Issue 追踪器](https://github.com/matrixleons/evilwaf/issues)
+
+---
+
+*本更新日志按照 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 维护。*

@@ -1,27 +1,27 @@
-## Summary
+## 变更摘要
 
-- What changed?
-- Why is this needed?
+- 改了什么？
+- 为什么需要这个更改？
 
-## Risk / Impact
+## 风险 / 影响
 
-- Networking/TLS/proxy impact:
-- Backward compatibility considerations:
+- 网络/TLS/代理影响：
+- 向后兼容性考量：
 
-## Validation
+## 验证
 
-- [ ] Local syntax/compile checks
-- [ ] CLI smoke check
-- [ ] Additional manual checks (if applicable)
+- [ ] 本地语法/编译检查
+- [ ] CLI 冒烟测试
+- [ ] 其他手动检查（如适用）
 
-Commands used:
+使用的命令：
 
 ```bash
 python -m py_compile evilwaf.py core/*.py chemistry/*.py
 python evilwaf.py -h
 ```
 
-## Related
+## 关联
 
-- Issue(s):
-- Security considerations:
+- Issue(s)：
+- 安全注意事项：

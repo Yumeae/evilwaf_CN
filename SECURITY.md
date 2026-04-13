@@ -1,38 +1,38 @@
-# Security Policy
+# 安全策略
 
-## Supported Versions
+## 支持的版本
 
-Security fixes are provided for actively maintained branches:
+安全修复仅提供给积极维护的分支：
 
-- `main`: fully supported
-- pre-release branches: best effort until merged
-- older branches/tags: no guaranteed SLA
+- `main`：完全支持
+- 预发布分支：尽力支持，直至合并
+- 旧版分支/标签：无保证的 SLA
 
-## Reporting a Vulnerability
+## 报告漏洞
 
-Do not open public issues for unpatched vulnerabilities.
+请勿在公开 issue 中提交未修复的漏洞。
 
-Report privately using:
+请通过以下方式私下报告：
 
-- GitHub Security Advisory (preferred): repository `Security` tab
+- GitHub 安全公告（首选）：仓库 `Security` 标签页
 
-Please include:
+请包含：
 
-- affected version/commit
-- impact and attack scenario
-- minimal reproduction steps
-- suggested mitigation (if available)
+- 受影响的版本/提交
+- 影响及攻击场景
+- 最小复现步骤
+- 建议的缓解措施（如有）
 
-## Response Targets
+## 响应目标
 
-- Initial triage: within 3 business days
-- Severity assessment and remediation plan: within 7 business days
-- Patch targets:
-  - critical/high: as soon as possible (typically within 14 days)
-  - medium/low: next scheduled security release
+- 初步分类：3 个工作日内
+- 严重性评估及修复计划：7 个工作日内
+- 补丁目标：
+  - 严重/高危：尽快（通常 14 天内）
+  - 中危/低危：下一个计划安全版本
 
-## Disclosure
+## 披露
 
-- Coordinated disclosure is expected.
-- Public details are shared after patch availability.
-- Reporter credit is provided unless anonymity is requested.
+- 预期协调披露。
+- 公开详情在补丁可用后分享。
+- 除非请求匿名，否则提供报告者署名。
